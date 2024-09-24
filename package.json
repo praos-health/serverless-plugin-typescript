@@ -1,5 +1,5 @@
 {
-  "name": "serverless-plugin-typescript",
+  "name": "@praos-health/serverless-plugin-typescript",
   "version": "2.1.5",
   "license": "MIT",
   "main": "dist/src/index.js",
