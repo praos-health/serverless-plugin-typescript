@@ -255,18 +255,33 @@ export class TypeScriptPlugin {
   async moveArtifacts(): Promise<void> {
     const { service } = this.serverless
 
+    //  https://github.com/serverless/serverless-plugin-typescript/issues/270
+    const sourcePath = path.join(this.originalServicePath, BUILD_FOLDER, SERVERLESS_FOLDER)
+    const destinationPath = path.join(this.originalServicePath, SERVERLESS_FOLDER)
+
     await fs.copy(
-      path.join(this.originalServicePath, BUILD_FOLDER, SERVERLESS_FOLDER),
-      path.join(this.originalServicePath, SERVERLESS_FOLDER)
+      sourcePath,
+      destinationPath
     )
 
+    // After this function returns, the build folder will be deleted
+    // because the files have been copied into the .serverless folder.
+    // However, serverless will still be looking for that build folder
+    // at deploy time because it doesn't know that it has been deleted.
+    // This updates the reference.		
     const layerNames = service.getAllLayers()
     layerNames.forEach(name => {
-      service.layers[name].package.artifact = path.join(
-        this.originalServicePath,
-        SERVERLESS_FOLDER,
-        path.basename(service.layers[name].package.artifact)
-      )
+      const existingArtifactPath = service.layers[name].package.artifact;
+      // Only reset this reference if the artifact was originally copied by
+      // this plugin. Otherwise, leave it alone, because the user (or another plugin)
+      // has set this to a specific location.
+      if (path.dirname(existingArtifactPath) === sourcePath) {
+        service.layers[name].package.artifact = path.join(
+          this.originalServicePath,
+          SERVERLESS_FOLDER,
+          path.basename(existingArtifactPath)
+        )
+      }
     })
 
     if (this.options.function) {
