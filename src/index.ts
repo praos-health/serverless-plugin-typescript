@@ -60,9 +60,6 @@ export class TypeScriptPlugin {
         await this.copyExtras()
         await this.copyDependencies(true)
       },
-      'after:package:createDeploymentArtifacts': async () => {
-        await this.cleanup()
-      },
       'before:deploy:function:packageFunction': async () => {
         await this.compileTs()
         await this.copyExtras()
@@ -86,7 +83,10 @@ export class TypeScriptPlugin {
         if (this.options.watch) {
           await this.watchFunction()
         }
-      }
+      },
+			'after:aws:package:finalize:mergeCustomProviderResources': async () => {
+				await this.cleanup()
+			}			
     }
   }
 
